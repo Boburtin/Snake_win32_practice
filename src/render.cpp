@@ -3,7 +3,9 @@
 #include <string>
 
 void PaintGame(RenderContext &ctx, Snake &snake, GameData &gd) {
-  auto tileRect = [](PVec2 v) -> RECT { return {v.x * TILESIZE, v.y * TILESIZE, v.x * TILESIZE + TILESIZE, v.y * TILESIZE + TILESIZE}; };
+  auto tileRect = [](PVec2 v) -> RECT {
+    return {v.x * TILESIZE, v.y * TILESIZE, v.x * TILESIZE + TILESIZE, v.y * TILESIZE + TILESIZE};
+  };
   FillRect(ctx.hdc, &ctx.ps.rcPaint, (HBRUSH)GetStockObject(BLACK_BRUSH));
   FrameRect(ctx.hdc, &ctx.ps.rcPaint, (HBRUSH)GetStockObject(WHITE_BRUSH));
   for (int i{0}; i < snake.len; ++i) {
@@ -14,8 +16,8 @@ void PaintGame(RenderContext &ctx, Snake &snake, GameData &gd) {
   HBRUSH foodBrush = CreateSolidBrush(snake.len % 32 < 10 ? RGB(0, 255, 0) : RGB(150, 50, 150));
   FillRect(ctx.hdc, &foodRect, foodBrush);
   RECT hudRect = {0, HEIGHT, WIDTH, HEIGHT + 2 * TILESIZE};
-  HFONT hudFont = CreateFont(-TILESIZE, 0, 0, 0, FW_MEDIUM, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                             CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Consolas"));
+  HFONT hudFont = CreateFont(-TILESIZE, 0, 0, 0, FW_MEDIUM, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+                             CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Consolas"));
   HFONT oldFont = (HFONT)SelectObject(ctx.hdc, hudFont);
   SetBkMode(ctx.hdc, TRANSPARENT);
   SetTextColor(ctx.hdc, RGB(255, 255, 255));
@@ -40,10 +42,11 @@ void PaintMenu(RenderContext &ctx, Moption option) {
   RECT mOne = {WIDTH / 4, HEIGHT * 3 / 8, WIDTH * 3 / 4, HEIGHT / 2};
   RECT mTwo = {WIDTH / 4, HEIGHT / 2, WIDTH * 3 / 4, HEIGHT * 5 / 8};
   RECT mThree = {WIDTH / 4, HEIGHT * 5 / 8, WIDTH * 3 / 4, HEIGHT * 3 / 4};
-  HFONT headerFont = CreateFont(-TILESIZE * 2, 0, 0, 0, 500, TRUE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                                CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Consolas"));
-  HFONT optionFont = CreateFont((int)(1.5f * -TILESIZE), 0, 0, 0, 400, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+  HFONT headerFont = CreateFont(-TILESIZE * 2, 0, 0, 0, 500, TRUE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
                                 CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Consolas"));
+  HFONT optionFont =
+      CreateFont((int)(1.5f * -TILESIZE), 0, 0, 0, 400, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+                 CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Consolas"));
   FillRect(ctx.hdc, &mParent, (HBRUSH)GetStockObject(BLACK_BRUSH));
   FrameRect(ctx.hdc, &mParent, (HBRUSH)GetStockObject(WHITE_BRUSH));
   HFONT oldFont = (HFONT)SelectObject(ctx.hdc, headerFont);
@@ -57,24 +60,4 @@ void PaintMenu(RenderContext &ctx, Moption option) {
   SelectObject(ctx.hdc, oldFont);
   DeleteObject(headerFont);
   DeleteObject(optionFont);
-}
-
-HWND WindowInit(HINSTANCE hInstance, int nCmdShow) {
-  WNDCLASS wc{};
-  HWND hwnd;
-  wc.lpfnWndProc = WindowProc;
-  wc.lpszClassName = L"Meo Bad Snake";
-  wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-  wc.hInstance = hInstance;
-  RegisterClass(&wc);
-  RECT rc = {0, 0, WIDTH, HEIGHT + 2 * TILESIZE};
-  DWORD WindowStyles = WS_OVERLAPPEDWINDOW & ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
-  AdjustWindowRectEx(&rc, WindowStyles, FALSE, 0);
-  hwnd = CreateWindowEx(0, L"Meo Bad Snake", L"Snakeo", WindowStyles, CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top,
-                        NULL, NULL, hInstance, NULL);
-  ShowWindow(hwnd, nCmdShow);
-  InitGame();
-  UpdateWindow(hwnd);
-  SetTimer(hwnd, 0, 140, NULL);
-  return hwnd;
 }

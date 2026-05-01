@@ -15,7 +15,3 @@ void PaintMenu(RenderContext &ctx, Moption option);
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 HWND WindowInit(HINSTANCE hInstance, int nCmdShow);
-
-void UpdateGame();
-
-void InitGame();

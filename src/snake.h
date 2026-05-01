@@ -18,34 +18,35 @@ enum class Moption { CONTINUE, RESTART, QUIT };
 struct PVec2 {
   int x;
   int y;
-  PVec2 operator+(const PVec2 &other) const { return {x + other.x, y + other.y}; }
-  bool operator==(const PVec2 &other) const { return x == other.x && y == other.y; }
+  PVec2 operator+(const PVec2 &other) const {
+    return {x + other.x, y + other.y};
+  }
+  bool operator==(const PVec2 &other) const {
+    return x == other.x && y == other.y;
+  }
   int index() const { return y * COLS + x; }
 };
 
 struct Snake {
-  PVec2 dir;
-  PVec2 pDir;
-  PVec2 body[TOTAL_TILES];
-  int head;
-  int len;
-  void setDir() { dir = pDir; }
-  PVec2 next() { return body[head] + dir; }
-  Snake() {
-    body[0] = {START_X, START_Y};
-    dir = {1, 0};
-    pDir = {1, 0};
-    head = 0;
-    len = 1;
-  }
+  PVec2 dir = {1, 0};
+  PVec2 pDir = {1, 0};
+  PVec2 body[TOTAL_TILES] = {{START_X, START_Y}};
+  int head = 0;
+  int len = 1;
+  PVec2 next() const { return body[head] + dir; }
 };
 
 struct GameData {
   Gtile board[TOTAL_TILES]{Gtile::FREE};
-  Gstate gState;
+  Gstate gState = Gstate::PLAYING;
   PVec2 food;
-  bool isTileDeadly(PVec2 p) { return ((p.x < 0 || p.x >= COLS) || (p.y < 0 || p.y >= ROWS) || board[p.index()] == Gtile::SNAKE); }
-  void cleanTiles() {
-    for (auto &t : board) t = Gtile::FREE;
+  bool gonnaDie(PVec2 p) const {
+    return ((p.x < 0 || p.x >= COLS) || (p.y < 0 || p.y >= ROWS) ||
+            board[p.index()] == Gtile::SNAKE);
   }
+  void reset() {
+    for (auto &t : board)
+      t = Gtile::FREE;
+  }
+  void pause() { gState = Gstate::PAUSED; }
 };
