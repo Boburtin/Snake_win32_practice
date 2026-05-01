@@ -1,20 +1,25 @@
 CXX = g++
-CXXFLAGS = -std=c++23 -Wall -Werror -DUNICODE -D_UNICODE
+CXXFLAGS = -std=c++23 -Wall -Wextra -Werror -DUNICODE -D_UNICODE -masm=intel
 LDFLAGS = -static -municode -mwindows
 
-SRCS = snake.cpp
-OBJS = ${SRCS:.cpp=.o}
-TARGET = snake.exe
+SRCDIR := src
+BUILDDIR := build
+TARGET := bin/snake_win32
+SRCEXT := cpp
 
-.PHONY: all clean install test
+SRCS := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
+OBJS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SRCS:.$(SRCEXT)=.o))
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CXX) $(LDFLAGS) $^ -o $@
 
-%.o: %.cpp	
+$(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
+	@mkdir -p $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	@$(RM) -r $(BUILDDIR) $(TARGET)
+
+.PHONY: clean

@@ -1,3 +1,4 @@
+build/
+.clang-format
 *.o
 *.exe
-CLAUDE.md
