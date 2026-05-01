@@ -26,7 +26,7 @@ struct PVec2 {
 struct Snake {
   PVec2 dir;
   PVec2 pDir;
-  PVec2 body[TOTAL_TILES]; 
+  PVec2 body[TOTAL_TILES];
   int head;
   int len;
   void setDir() { dir = pDir; }
@@ -41,15 +41,11 @@ struct Snake {
 };
 
 struct GameData {
-  Gtile board[TOTAL_TILES] {Gtile::FREE};
+  Gtile board[TOTAL_TILES]{Gtile::FREE};
   Gstate gState;
   PVec2 food;
-  bool notFree(PVec2 p) {
-    return ((p.x < 0 || p.x >= COLS) || (p.y < 0 || p.y >= ROWS) ||
-            board[p.index()] == Gtile::SNAKE);
-  }
+  bool isTileDeadly(PVec2 p) { return ((p.x < 0 || p.x >= COLS) || (p.y < 0 || p.y >= ROWS) || board[p.index()] == Gtile::SNAKE); }
   void cleanTiles() {
-    for (auto &t : board)
-      t = Gtile::FREE;
+    for (auto &t : board) t = Gtile::FREE;
   }
 };

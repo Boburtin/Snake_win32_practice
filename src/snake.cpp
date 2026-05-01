@@ -1,6 +1,8 @@
-#include "render.h"
-#include <cstdint>
 #include <intrin.h>
+
+#include <cstdint>
+
+#include "render.h"
 
 static Moption pauseSelection;
 static Snake snake;
@@ -43,7 +45,7 @@ void QueueDirection(WPARAM key) {
 }
 
 PVec2 GetNewFoodSpot() {
-  PVec2 res {};
+  PVec2 res{};
   do {
     uint64_t val = rng.next();
     res.x = static_cast<int>(val % COLS);
@@ -54,11 +56,7 @@ PVec2 GetNewFoodSpot() {
 
 void InitGame() {
   gd.cleanTiles();
-  snake.dir = {1, 0};
-  snake.pDir = {1, 0};
-  snake.head = 0;
-  snake.len = 1;
-  snake.body[0] = {START_X, START_Y};
+  snake = Snake();
   gd.board[START_INDEX] = Gtile::SNAKE;
   gd.food = GetNewFoodSpot();
   gd.gState = Gstate::PLAYING;
@@ -67,7 +65,7 @@ void InitGame() {
 void UpdateGame() {
   snake.setDir();
   PVec2 nextTile = snake.next();
-  if (gd.notFree(nextTile)) gd.gState = Gstate::GAME_OVER;
+  if (gd.isTileDeadly(nextTile)) gd.gState = Gstate::GAME_OVER;
   else {
     gd.board[nextTile.index()] = Gtile::SNAKE;
     snake.head = (snake.head + 1) % TOTAL_TILES;
@@ -75,16 +73,12 @@ void UpdateGame() {
     if (nextTile == gd.food) {
       gd.food = GetNewFoodSpot();
       snake.len++;
-    } else
-      gd.board[snake.body[(snake.head - snake.len + TOTAL_TILES) % TOTAL_TILES].index()] =
-          Gtile::FREE;
+    } else gd.board[snake.body[(snake.head - snake.len + TOTAL_TILES) % TOTAL_TILES].index()] = Gtile::FREE;
   }
 }
 
 void HandleMenu(WPARAM key) {
-  auto cycleOption = [](Moption opt, int delta) -> Moption {
-    return static_cast<Moption>((static_cast<int>(opt) + delta + 3) % 3);
-  };
+  auto cycleOption = [](Moption opt, int delta) -> Moption { return static_cast<Moption>((static_cast<int>(opt) + delta + 3) % 3); };
   switch (key) {
     case VK_DOWN:
     case VK_RIGHT:
@@ -96,9 +90,7 @@ void HandleMenu(WPARAM key) {
     case 'A': pauseSelection = cycleOption(pauseSelection, -1); break;
     case VK_RETURN:
     case VK_SPACE: {
-      if ((pauseSelection == Moption::CONTINUE && gd.gState == Gstate::GAME_OVER) ||
-          pauseSelection == Moption::RESTART)
-        InitGame();
+      if ((pauseSelection == Moption::CONTINUE && gd.gState == Gstate::GAME_OVER) || pauseSelection == Moption::RESTART) InitGame();
       else if (pauseSelection == Moption::QUIT) PostQuitMessage(0);
       else gd.gState = Gstate::PLAYING;
       break;
@@ -114,7 +106,7 @@ void HandleMenu(WPARAM key) {
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
   HWND hwnd = WindowInit(hInstance, nCmdShow);
   if (hwnd == NULL) return 0;
-  MSG msg {};
+  MSG msg{};
   while (GetMessage(&msg, NULL, 0, 0) > 0) {
     TranslateMessage(&msg);
     DispatchMessage(&msg);
@@ -142,7 +134,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     case WM_PAINT: {
       PAINTSTRUCT ps;
       HDC hdc = BeginPaint(hwnd, &ps);
-      RenderContext ctx {hdc, ps};
+      RenderContext ctx{hdc, ps};
       PaintGame(ctx, snake, gd);
       if (gd.gState != Gstate::PLAYING) PaintMenu(ctx, pauseSelection);
       EndPaint(hwnd, &ps);
