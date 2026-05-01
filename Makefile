@@ -1,6 +1,7 @@
 CXX = g++
-CXXFLAGS = -std=c++23 -Wall -Wextra -Werror -DUNICODE -D_UNICODE -masm=intel
-LDFLAGS = -static -municode -mwindows
+CXXFLAGS = -std=c++23 -Wall -Werror -Wextra -DUNICODE -D_UNICODE 
+LDFLAGS = -static -municode -mwindows  
+LDLIBS = -ld2d1 -ldwrite
 
 SRCDIR := src
 BUILDDIR := build
@@ -13,7 +14,7 @@ OBJS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SRCS:.$(SRCEXT)=.o))
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CXX) $(LDFLAGS) $^ -o $@
+	$(CXX) $(LDFLAGS) $^ -o $@ $(LDLIBS)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)

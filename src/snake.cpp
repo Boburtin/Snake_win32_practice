@@ -7,6 +7,7 @@
 static Moption pauseSelection;
 static Snake snake;
 static GameData gd;
+static RenderContext ctx;
 
 struct Xorshift64 {
   uint64_t state;
@@ -137,6 +138,7 @@ HWND WindowInit(HINSTANCE hInstance, int nCmdShow) {
                         CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left,
                         rc.bottom - rc.top, NULL, NULL, hInstance, NULL);
   ShowWindow(hwnd, nCmdShow);
+  InitRenderContext(ctx, hwnd);
   InitGame();
   UpdateWindow(hwnd);
   SetTimer(hwnd, 0, 140, NULL);
@@ -173,13 +175,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
     }
     return 0;
   case WM_PAINT: {
-    PAINTSTRUCT ps;
-    HDC hdc = BeginPaint(hwnd, &ps);
-    RenderContext ctx{hdc, ps};
+    ctx.pRT->BeginDraw();
     PaintGame(ctx, snake, gd);
     if (gd.gState != Gstate::PLAYING)
       PaintMenu(ctx, pauseSelection);
-    EndPaint(hwnd, &ps);
+    ctx.pRT->EndDraw();
+    ValidateRect(hwnd, NULL);
     return 0;
   }
   case WM_TIMER:
