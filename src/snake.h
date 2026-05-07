@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SNAKE_H
+#define SNAKE_H
 
 inline constexpr int WIDTH = 800;
 inline constexpr int HEIGHT = 600;
@@ -70,3 +71,5 @@ struct Settings {
     wchar_t username[32];
     UINT highScore = 0U;
 };
+
+#endif

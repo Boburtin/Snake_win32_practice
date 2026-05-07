@@ -27,6 +27,7 @@ void InitRenderContext(RenderContext &ctx, HWND hwnd) {
 }
 
 void PaintGame(RenderContext &ctx, const Snake &snake, const GameData &gd) {
+    HudRects h;
     auto tileRect = [](PVec2 v) -> D2D1_RECT_F {
         float x = v.x * TILESIZE, y = v.y * TILESIZE;
         return { x + 1.f, y + 1.f, x + TILESIZE - 1.f, y + TILESIZE - 1.f };
@@ -38,9 +39,6 @@ void PaintGame(RenderContext &ctx, const Snake &snake, const GameData &gd) {
             ctx.pRT->FillRectangle(snakeRect, ctx.pBrush);
         }
     };
-    D2D1_RECT_F hudOutlineRect = { 0.f, HEIGHT * 1.f, WIDTH * 1.f, HEIGHT + TILESIZE * 2.f };
-    D2D1_RECT_F hudScoreRect = { 0.f, HEIGHT * 1.f, WIDTH * .5f, HEIGHT + TILESIZE * 2.f };
-    D2D1_RECT_F hudLevelRect = { WIDTH * .5f, HEIGHT * 1.f, WIDTH * 1.f, HEIGHT + TILESIZE * 2.f };
     D2D1_RECT_F foodRect = tileRect(gd.food);
     wchar_t scoreBuf[64];
     wchar_t levelBuf[64];
@@ -54,11 +52,11 @@ void PaintGame(RenderContext &ctx, const Snake &snake, const GameData &gd) {
                 ctx.pBrush->SetColor(levelTheme(gd.level).food);
                 ctx.pRT->FillRectangle(foodRect, ctx.pBrush);
                 ctx.pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Black));
-                ctx.pRT->FillRectangle(hudOutlineRect, ctx.pBrush);
+                ctx.pRT->FillRectangle(h.frame, ctx.pBrush);
                 ctx.pBrush->SetColor(D2D1::ColorF(.8f, 1.f, .8f, .75f));
-                ctx.pRT->DrawTextW(scoreBuf, wcslen(scoreBuf), ctx.pHudFont, hudScoreRect, ctx.pBrush);
-                ctx.pRT->DrawTextW(levelBuf, wcslen(levelBuf), ctx.pHudFont, hudLevelRect, ctx.pBrush);
-                ctx.pRT->DrawRectangle(hudOutlineRect, ctx.pBrush);
+                ctx.pRT->DrawTextW(scoreBuf, wcslen(scoreBuf), ctx.pHudFont, h.score, ctx.pBrush);
+                ctx.pRT->DrawTextW(levelBuf, wcslen(levelBuf), ctx.pHudFont, h.level, ctx.pBrush);
+                ctx.pRT->DrawRectangle(h.frame, ctx.pBrush);
             }
             fillSnake();
             ctx.pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Black));
@@ -67,7 +65,7 @@ void PaintGame(RenderContext &ctx, const Snake &snake, const GameData &gd) {
         }
         case TRUE: {
             ctx.pRT->Clear(D2D1::ColorF(D2D1::ColorF::Black));
-            ctx.pBrush->SetColor(D2D1::ColorF(.2f, .2f, .2f, .1f));
+            ctx.pBrush->SetColor(D2D1::ColorF(.2f, .2f, .2f, .2f));
             for (float col { 0.f }; col <= COLS; ++col)
                 ctx.pRT->DrawLine({ col * TILESIZE, 0.f }, { col * TILESIZE, HEIGHT }, ctx.pBrush, .5f);
             for (float row { 0.f }; row <= ROWS; ++row)
@@ -76,9 +74,9 @@ void PaintGame(RenderContext &ctx, const Snake &snake, const GameData &gd) {
             ctx.pBrush->SetColor(levelTheme(gd.level).food);
             ctx.pRT->FillRectangle(foodRect, ctx.pBrush);
             ctx.pBrush->SetColor(D2D1::ColorF(.8f, 1.f, .8f, .75f));
-            ctx.pRT->DrawTextW(scoreBuf, wcslen(scoreBuf), ctx.pHudFont, hudScoreRect, ctx.pBrush);
-            ctx.pRT->DrawTextW(levelBuf, wcslen(levelBuf), ctx.pHudFont, hudLevelRect, ctx.pBrush);
-            ctx.pRT->DrawRectangle(hudOutlineRect, ctx.pBrush);
+            ctx.pRT->DrawTextW(scoreBuf, wcslen(scoreBuf), ctx.pHudFont, h.score, ctx.pBrush);
+            ctx.pRT->DrawTextW(levelBuf, wcslen(levelBuf), ctx.pHudFont, h.level, ctx.pBrush);
+            ctx.pRT->DrawRectangle(h.frame, ctx.pBrush);
         } break;
     }
 };
@@ -101,48 +99,34 @@ void drawMenuFrame(RenderContext &ctx, const D2D1_RECT_F &mR, const D2D1_RECT_F 
 }
 
 void PaintHomeMenu(RenderContext &ctx, const GameData &gd) {
-    D2D1_RECT_F mR = { WIDTH * .2f, HEIGHT * .2f, WIDTH * .8f, HEIGHT * .7f };
-    D2D1_RECT_F mH = { WIDTH * .2f, HEIGHT * .2f, WIDTH * .8f, HEIGHT * .3f };
-    D2D1_RECT_F m1 = { WIDTH * .2f, HEIGHT * .3f, WIDTH * .8f, HEIGHT * .4f };
-    D2D1_RECT_F m2 = { WIDTH * .2f, HEIGHT * .4f, WIDTH * .8f, HEIGHT * .5f };
-    D2D1_RECT_F m3 = { WIDTH * .2f, HEIGHT * .5f, WIDTH * .8f, HEIGHT * .6f };
-    D2D1_RECT_F m4 = { WIDTH * .2f, HEIGHT * .6f, WIDTH * .8f, HEIGHT * .7f };
-    drawMenuFrame(ctx, mR, mH, L"* Home *");
-    drawOption(ctx, gd.homeMenu, HomeMenu::PLAY, m1, L"Play");
+    HomeMenuRects h;
+    drawMenuFrame(ctx, h.frame, h.header, L"* Home *");
+    drawOption(ctx, gd.homeMenu, HomeMenu::PLAY, h.play, L"Play");
     ctx.pBrush->SetColor(gd.homeMenu == HomeMenu::MULTI ? D2D1::ColorF(D2D1::ColorF::LightGray)
                                                         : D2D1::ColorF(D2D1::ColorF::Black));
-    ctx.pRT->FillRectangle(m2, ctx.pBrush);
+    ctx.pRT->FillRectangle(h.multi, ctx.pBrush);
     ctx.pBrush->SetColor(gd.homeMenu == HomeMenu::TOGGLE ? D2D1::ColorF(D2D1::ColorF::LightGray)
                                                          : D2D1::ColorF(D2D1::ColorF::Black));
-    ctx.pRT->FillRectangle(m3, ctx.pBrush);
+    ctx.pRT->FillRectangle(h.toggle, ctx.pBrush);
     ctx.pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Gray, .5f));
-    ctx.pRT->DrawTextW(L"Multi", wcslen(L"Multi"), ctx.pLockedOptionFont, m2, ctx.pBrush);
-    ctx.pRT->DrawTextW(L"Toggle", wcslen(L"Toggle"), ctx.pLockedOptionFont, m3, ctx.pBrush);
-    drawOption(ctx, gd.homeMenu, HomeMenu::QUIT, m4, L"Quit");
+    ctx.pRT->DrawTextW(L"Multi", wcslen(L"Multi"), ctx.pLockedOptionFont, h.multi, ctx.pBrush);
+    ctx.pRT->DrawTextW(L"Toggle", wcslen(L"Toggle"), ctx.pLockedOptionFont, h.toggle, ctx.pBrush);
+    drawOption(ctx, gd.homeMenu, HomeMenu::QUIT, h.quit, L"Quit");
 }
 
 void PaintPauseMenu(RenderContext &ctx, const GameData &gd) {
-    D2D1_RECT_F mR = { WIDTH * .2f, HEIGHT * .2f, WIDTH * .8f, HEIGHT * .7f };
-    D2D1_RECT_F mH = { WIDTH * .2f, HEIGHT * .2f, WIDTH * .8f, HEIGHT * .3f };
-    D2D1_RECT_F m1 = { WIDTH * .2f, HEIGHT * .3f, WIDTH * .8f, HEIGHT * .4f };
-    D2D1_RECT_F m2 = { WIDTH * .2f, HEIGHT * .4f, WIDTH * .8f, HEIGHT * .5f };
-    D2D1_RECT_F m3 = { WIDTH * .2f, HEIGHT * .5f, WIDTH * .8f, HEIGHT * .6f };
-    D2D1_RECT_F m4 = { WIDTH * .2f, HEIGHT * .6f, WIDTH * .8f, HEIGHT * .7f };
-    drawMenuFrame(ctx, mR, mH, L"* Paused *");
-    drawOption(ctx, gd.pauseMenu, PauseMenu::RESUME, m1, L"Resume");
-    drawOption(ctx, gd.pauseMenu, PauseMenu::RESTART, m2, L"Restart");
-    drawOption(ctx, gd.pauseMenu, PauseMenu::BACK, m3, L"Back");
-    drawOption(ctx, gd.pauseMenu, PauseMenu::QUIT, m4, L"Quit");
+    PauseMenuRects p;
+    drawMenuFrame(ctx, p.frame, p.header, L"* Paused *");
+    drawOption(ctx, gd.pauseMenu, PauseMenu::RESUME, p.resume, L"Resume");
+    drawOption(ctx, gd.pauseMenu, PauseMenu::RESTART, p.restart, L"Restart");
+    drawOption(ctx, gd.pauseMenu, PauseMenu::BACK, p.back, L"Back");
+    drawOption(ctx, gd.pauseMenu, PauseMenu::QUIT, p.quit, L"Quit");
 }
 
 void PaintGameOverMenu(RenderContext &ctx, const GameData &gd) {
-    D2D1_RECT_F mR = { WIDTH * .2f, HEIGHT * .2f, WIDTH * .8f, HEIGHT * .6f };
-    D2D1_RECT_F mH = { WIDTH * .2f, HEIGHT * .2f, WIDTH * .8f, HEIGHT * .3f };
-    D2D1_RECT_F m1 = { WIDTH * .2f, HEIGHT * .3f, WIDTH * .8f, HEIGHT * .4f };
-    D2D1_RECT_F m2 = { WIDTH * .2f, HEIGHT * .4f, WIDTH * .8f, HEIGHT * .5f };
-    D2D1_RECT_F m3 = { WIDTH * .2f, HEIGHT * .5f, WIDTH * .8f, HEIGHT * .6f };
-    drawMenuFrame(ctx, mR, mH, L"* Game over *");
-    drawOption(ctx, gd.gameOverMenu, GameOverMenu::RESTART, m1, L"Restart");
-    drawOption(ctx, gd.gameOverMenu, GameOverMenu::BACK, m2, L"Back");
-    drawOption(ctx, gd.gameOverMenu, GameOverMenu::QUIT, m3, L"Quit");
+    GameOverMenuRects g;
+    drawMenuFrame(ctx, g.frame, g.header, L"* Game over *");
+    drawOption(ctx, gd.gameOverMenu, GameOverMenu::RESTART, g.restart, L"Restart");
+    drawOption(ctx, gd.gameOverMenu, GameOverMenu::BACK, g.back, L"Back");
+    drawOption(ctx, gd.gameOverMenu, GameOverMenu::QUIT, g.quit, L"Quit");
 }
