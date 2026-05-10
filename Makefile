@@ -20,7 +20,10 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+run: $(TARGET)
+	@./$(TARGET)
+
 clean:
 	@$(RM) -r $(BUILDDIR) $(TARGET)
 
-.PHONY: clean
+.PHONY: run clean

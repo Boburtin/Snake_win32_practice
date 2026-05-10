@@ -18,6 +18,8 @@ struct RenderContext {
     IDWriteTextFormat *pHudFont;
     IDWriteTextFormat *pHeaderFont;
     IDWriteTextFormat *pLockedOptionFont;
+    BOOL fullRedraw = TRUE;
+    BOOL foodEaten = FALSE;
     void release() {
         pLockedOptionFont->Release();
         pHeaderFont->Release();
@@ -27,8 +29,20 @@ struct RenderContext {
         pRT->Release();
         pFactory->Release();
     }
-    BOOL fullRedraw = TRUE;
-    BOOL foodEaten = FALSE;
+};
+
+struct MenuOption {
+    const D2D1_RECT_F rect;
+    const wchar_t *label;
+    const bool locked = false;
+};
+
+struct MenuRect {
+    const D2D1_RECT_F frame;
+    const D2D1_RECT_F header;
+    const wchar_t *title;
+    const MenuOption options[4];
+    const int count;
 };
 
 struct LevelTheme {
@@ -43,46 +57,50 @@ struct HudRects {
     D2D1_RECT_F level = { WIDTH * .5f, HEIGHT * 1.f, WIDTH * 1.f, HEIGHT + TILESIZE * 2.f };
 };
 
-struct HomeMenuRects {
-    D2D1_RECT_F frame = { WIDTH * .2f, HEIGHT * .2f, WIDTH * .8f, HEIGHT * .7f };
-    D2D1_RECT_F header = { WIDTH * .2f, HEIGHT * .2f, WIDTH * .8f, HEIGHT * .3f };
-    D2D1_RECT_F play = { WIDTH * .2f, HEIGHT * .3f, WIDTH * .8f, HEIGHT * .4f };
-    D2D1_RECT_F multi = { WIDTH * .2f, HEIGHT * .4f, WIDTH * .8f, HEIGHT * .5f };
-    D2D1_RECT_F toggle = { WIDTH * .2f, HEIGHT * .5f, WIDTH * .8f, HEIGHT * .6f };
-    D2D1_RECT_F quit = { WIDTH * .2f, HEIGHT * .6f, WIDTH * .8f, HEIGHT * .7f };
-};
+inline const MenuRect gameOverMenu { { WPOINT2, HPOINT2, WPOINT8, HPOINT5 },
+                                     { WPOINT2, HPOINT2, WPOINT8, HPOINT3 },
+                                     L"* Game Over *",
+                                     { { { WPOINT2, HPOINT3, WPOINT8, HPOINT4 }, L"redo", false },
+                                       { { WPOINT2, HPOINT4, WPOINT8, HPOINT5 }, L"quit", false } },
+                                     2 };
 
-struct PauseMenuRects {
-    D2D1_RECT_F frame = { WIDTH * .2f, HEIGHT * .2f, WIDTH * .8f, HEIGHT * .7f };
-    D2D1_RECT_F header = { WIDTH * .2f, HEIGHT * .2f, WIDTH * .8f, HEIGHT * .3f };
-    D2D1_RECT_F resume = { WIDTH * .2f, HEIGHT * .3f, WIDTH * .8f, HEIGHT * .4f };
-    D2D1_RECT_F restart = { WIDTH * .2f, HEIGHT * .4f, WIDTH * .8f, HEIGHT * .5f };
-    D2D1_RECT_F back = { WIDTH * .2f, HEIGHT * .5f, WIDTH * .8f, HEIGHT * .6f };
-    D2D1_RECT_F quit = { WIDTH * .2f, HEIGHT * .6f, WIDTH * .8f, HEIGHT * .7f };
-};
+inline const MenuRect homeMenu { { WPOINT2, HPOINT2, WPOINT8, HPOINT7 },
+                                 { WPOINT2, HPOINT2, WPOINT8, HPOINT3 },
+                                 L"* Home Menu *",
+                                 { { { WPOINT2, HPOINT3, WPOINT8, HPOINT4 }, L"start", false },
+                                   { { WPOINT2, HPOINT4, WPOINT8, HPOINT5 }, L"multi", true },
+                                   { { WPOINT2, HPOINT5, WPOINT8, HPOINT6 }, L"toggle ", true },
+                                   { { WPOINT2, HPOINT6, WPOINT8, HPOINT7 }, L"leave", false } },
+                                 4 };
 
-struct GameOverMenuRects {
-    D2D1_RECT_F frame = { WIDTH * .2f, HEIGHT * .2f, WIDTH * .8f, HEIGHT * .6f };
-    D2D1_RECT_F header = { WIDTH * .2f, HEIGHT * .2f, WIDTH * .8f, HEIGHT * .3f };
-    D2D1_RECT_F restart = { WIDTH * .2f, HEIGHT * .3f, WIDTH * .8f, HEIGHT * .4f };
-    D2D1_RECT_F back = { WIDTH * .2f, HEIGHT * .4f, WIDTH * .8f, HEIGHT * .5f };
-    D2D1_RECT_F quit = { WIDTH * .2f, HEIGHT * .5f, WIDTH * .8f, HEIGHT * .6f };
-};
+inline const MenuRect pauseMenu { { WPOINT2, HPOINT2, WPOINT8, HPOINT6 },
+                                  { WPOINT2, HPOINT2, WPOINT8, HPOINT3 },
+                                  L"* Paused *",
+                                  { { { WPOINT2, HPOINT3, WPOINT8, HPOINT4 }, L"play", false },
+                                    { { WPOINT2, HPOINT4, WPOINT8, HPOINT5 }, L"redo", false },
+                                    { { WPOINT2, HPOINT5, WPOINT8, HPOINT6 }, L"quit   ", false } },
+                                  3 };
 
 inline LevelTheme levelTheme(int level) {
-    auto s = [&](float base) { return fmodf(base + .1f * level, 1.f); };
-    return { { s(.75f), .75f, 0.f, 1.f }, { 1.f, 1.f, 1.f, .75f }, { s(.1f), 1.f, .1f, 1.f } };
+    auto s = [level](float base) { return fmodf(base + .1f * level, 1.f); };
+    return { { s(.75f), .75f, 0.f, 1.f }, { 1.f, 1.f, 1.f, .75f }, { s(.1f), 1.f, s(0.f), 1.f } };
 }
 
 void InitRenderContext(RenderContext &ctx, HWND hwnd);
 
 void PaintGame(RenderContext &ctx, const Snake &snake, const GameData &gd);
 
-void PaintHomeMenu(RenderContext &ctx, const GameData &gd);
+void drawMenuSection(RenderContext &ctx, int currentSelection, int thisIndex, const MenuRect &mr);
 
-void PaintPauseMenu(RenderContext &ctx, const GameData &gd);
-
-void PaintGameOverMenu(RenderContext &ctx, const GameData &gd);
+template <typename T>
+inline void PaintMenu(RenderContext &ctx, const MenuRect &mr, T currentSelection) {
+    ctx.pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Black));
+    ctx.pRT->FillRectangle(mr.frame, ctx.pBrush);
+    ctx.pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
+    ctx.pRT->DrawRectangle(mr.frame, ctx.pBrush);
+    ctx.pRT->DrawTextW(mr.title, wcslen(mr.title), ctx.pHeaderFont, mr.header, ctx.pBrush);
+    for (int i {}; i < mr.count; ++i) { drawMenuSection(ctx, (int)currentSelection, i, mr); }
+}
 
 HWND WindowInit(HINSTANCE hInstance, int nCmdShow);
 
