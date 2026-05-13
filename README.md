@@ -4,9 +4,14 @@ Just a fun Snake project that I used as an excuse to learn about interfacing wit
 
 ## Building
 
-The build uses (MSYS2/UCRT64) gcc 15.2.0 and GNU Make (included in MSYS2 toolchain)
+The build uses ([MSYS2](https://www.msys2.org)/UCRT64) gcc 15.2.0 and GNU Make (included in [MSYS2](https://www.msys2.org) toolchain).
+Follow the website's instructions and launch a UCRT64 shell instance, then cd:
 
-The binary is output to `bin/snake_win32`.
+```sh
+cd example_path/example_path/snake_win32_practice
+```
+
+into the cloned repository and you'll be able to build the program using GNU Make (or g++ directly from the command-line). Make commands are as follows:
 
 ```sh
 make clean  # to wipe build/, .o files, and .exe
@@ -19,6 +24,12 @@ make # or 'make all' to build
 ```sh
 make run # to build and then run the executable
 ```
+
+## Notes
+
+- I am a student and welcome advice and recommendations
+
+- Feel free to make PRs if you want to!
 
 ### Gameplay
 
