@@ -1,37 +1,11 @@
-#include <intrin.h>
-
-#include "render.h"
+#include "snake.h"
 
 static Snake snake {};
 static GameData gd {};
 static RenderContext ctx {};
+static Xorshift64 rng = Xorshift64();
 constexpr UINT_PTR TIMER_ID = 67ULL;
 constexpr UINT BASELINE_TICK_SPEED = 120U;
-
-struct Xorshift64 {
-    UINT64 state;
-    Xorshift64() {
-        LARGE_INTEGER qpc;
-        QueryPerformanceCounter(&qpc);
-        state = __rdtsc() ^ (UINT64)qpc.QuadPart;
-    }
-    UINT64 next() {
-        state ^= state << 13;
-        state ^= state >> 7;
-        state ^= state << 17;
-        return state;
-    }
-} static rng;
-
-PVec2 GetNewFoodSpot() {
-    PVec2 res {};
-    do {
-        UINT64 val = rng.next();
-        res.x = static_cast<int>(val % COLS);
-        res.y = static_cast<int>((val >> 32) % ROWS);
-    } while (gd.board[res.index()] != TileType::FREE || res == gd.food);
-    return res;
-}
 
 void QueueDirection(WPARAM key) {
     switch (key) {
@@ -57,8 +31,8 @@ void QueueDirection(WPARAM key) {
 void UpdateGame(HWND hwnd) {
     snake.dir = snake.pDir;
     PVec2 next = snake.next();
-    if (gd.isDead(next)) {
-        gd.gameState = GameState::GAME_OVER;
+    if (gd.board[next.index()] == TileType::SNAKE) {
+        gd.resetMenus(MenuNames::GAME_OVER);
         return;
     }
     gd.board[next.index()] = TileType::SNAKE;
@@ -71,12 +45,13 @@ void UpdateGame(HWND hwnd) {
     }
     if (snake.len > gd.level * 10) {
         gd.level++;
-        gd.reset(snake.body[snake.head].index(), GetNewFoodSpot, snake);
+        snake.lvlUp();
+        gd.lvlUp(snake.body[0].index());
         SetTimer(hwnd, TIMER_ID, gd.level < 5 ? BASELINE_TICK_SPEED - gd.level * 10 : 70, NULL);
         ctx.fullRedraw = TRUE;
     } else {
         snake.len++;
-        gd.food = GetNewFoodSpot();
+        gd.getNewFoodSpot();
         ctx.foodEaten = TRUE;
     }
     gd.eaten++;
@@ -99,49 +74,49 @@ void HandleMenus(WPARAM key) {
         case VK_RIGHT:
         case 'S':
         case 'D':
-            if (gd.gameState == GameState::PAUSED) cycleMenu(gd.pauseMenu, 1, PauseMenu::PLAY, PauseMenu::QUIT);
-            if (gd.gameState == GameState::GAME_OVER)
-                cycleMenu(gd.gameOverMenu, 1, GameOverMenu::REDO, GameOverMenu::QUIT);
-            if (gd.gameState == GameState::HOME_MENU) cycleMenu(gd.homeMenu, 1, HomeMenu::START, HomeMenu::LEAVE);
+            if (gd.gS->screen == MenuNames::PAUSE) cycleMenu(gd.gS->p_menu, 1, PauseMenu::PLAY, PauseMenu::QUIT);
+            if (gd.gS->screen == MenuNames::GAME_OVER)
+                cycleMenu(gd.gS->go_menu, 1, GameOverMenu::REDO, GameOverMenu::QUIT);
+            if (gd.gS->screen == MenuNames::HOME) cycleMenu(gd.gS->h_menu, 1, HomeMenu::START, HomeMenu::LEAVE);
             break;
         case VK_UP:
         case VK_LEFT:
         case 'W':
         case 'A':
-            if (gd.gameState == GameState::PAUSED) cycleMenu(gd.pauseMenu, -1, PauseMenu::PLAY, PauseMenu::QUIT);
-            if (gd.gameState == GameState::GAME_OVER)
-                cycleMenu(gd.gameOverMenu, -1, GameOverMenu::REDO, GameOverMenu::QUIT);
-            if (gd.gameState == GameState::HOME_MENU) cycleMenu(gd.homeMenu, -1, HomeMenu::START, HomeMenu::LEAVE);
+            if (gd.gS->screen == MenuNames::PAUSE) cycleMenu(gd.gS->p_menu, -1, PauseMenu::PLAY, PauseMenu::QUIT);
+            if (gd.gS->screen == MenuNames::GAME_OVER)
+                cycleMenu(gd.gS->go_menu, -1, GameOverMenu::REDO, GameOverMenu::QUIT);
+            if (gd.gS->screen == MenuNames::HOME) cycleMenu(gd.gS->h_menu, -1, HomeMenu::START, HomeMenu::LEAVE);
             break;
         case VK_ESCAPE:
         case VK_RETURN:
         case VK_SPACE:
-            if (gd.gameState == GameState::PAUSED) {
-                switch (gd.pauseMenu) {
+            if (gd.gS->screen == MenuNames::PAUSE) {
+                switch (gd.gS->p_menu) {
                     case PauseMenu::PLAY:
-                        gd.resume();
+                        gd.resetMenus(MenuNames::PLAYING);
                         ctx.fullRedraw = TRUE;
                         break;
                     case PauseMenu::REDO:
-                        gd.reset(snake, GetNewFoodSpot);
+                        gd.reset(snake);
                         ctx.fullRedraw = TRUE;
                         break;
-                    case PauseMenu::QUIT: gd.gameState = GameState::HOME_MENU; break;
+                    case PauseMenu::QUIT: gd.gS->screen = MenuNames::HOME; break;
                 }
-            } else if (gd.gameState == GameState::GAME_OVER) {
-                switch (gd.gameOverMenu) {
+            } else if (gd.gS->screen == MenuNames::GAME_OVER) {
+                switch (gd.gS->go_menu) {
                     case GameOverMenu::REDO:
-                        gd.reset(snake, GetNewFoodSpot);
+                        gd.reset(snake);
                         ctx.fullRedraw = TRUE;
                         break;
-                    case GameOverMenu::QUIT: gd.gameState = GameState::HOME_MENU; break;
+                    case GameOverMenu::QUIT: gd.gS->screen = MenuNames::HOME; break;
                 }
             }
 
-            else if (gd.gameState == GameState::HOME_MENU) {
-                switch (gd.homeMenu) {
+            else if (gd.gS->screen == MenuNames::HOME) {
+                switch (gd.gS->h_menu) {
                     case HomeMenu::START:
-                        gd.reset(snake, GetNewFoodSpot);
+                        gd.reset(snake);
                         ctx.fullRedraw = TRUE;
                         break;
                     case HomeMenu::MULTI: break;
@@ -159,17 +134,15 @@ HWND WindowInit(HINSTANCE hInstance, int nCmdShow) {
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hInstance = hInstance;
     RegisterClass(&wc);
-
     RECT rc = { 0, 0, WIDTH, HEIGHT + 2 * TILESIZE };
     DWORD WindowStyles = WS_OVERLAPPEDWINDOW & ~(WS_MAXIMIZEBOX | WS_THICKFRAME);
-
     AdjustWindowRectEx(&rc, WindowStyles, FALSE, 0);
     HWND hwnd = CreateWindowEx(0, L"3meo snake", L"Snake", WindowStyles, CW_USEDEFAULT, CW_USEDEFAULT,
                                rc.right - rc.left, rc.bottom - rc.top, NULL, NULL, hInstance, NULL);
     ShowWindow(hwnd, nCmdShow);
     InitRenderContext(ctx, hwnd);
-    gd.board[START_INDEX] = TileType::SNAKE;
-    gd.food = GetNewFoodSpot();
+    gd.resetMenus(MenuNames::HOME);
+    gd.lvlUp(START_INDEX);
     UpdateWindow(hwnd);
     SetTimer(hwnd, TIMER_ID, BASELINE_TICK_SPEED, NULL);
     return hwnd;
@@ -189,17 +162,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_KEYDOWN:
-            switch (gd.gameState) {
-                case GameState::HOME_MENU:
-                case GameState::GAME_OVER:
-                case GameState::PAUSED:
+            switch (gd.gS->screen) {
+                case MenuNames::HOME:
+                case MenuNames::GAME_OVER:
+                case MenuNames::PAUSE:
                     HandleMenus(wParam);
                     InvalidateRect(hwnd, NULL, FALSE);
                     break;
-                case GameState::PLAYING:
+                case MenuNames::PLAYING:
                     if (wParam == VK_SPACE || wParam == VK_ESCAPE || wParam == VK_RETURN) {
                         ctx.fullRedraw = TRUE;
-                        gd.pause();
+                        gd.resetMenus(MenuNames::PAUSE);
                         InvalidateRect(hwnd, NULL, FALSE);
                     } else QueueDirection(wParam);
                     break;
@@ -207,23 +180,24 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             return 0;
         case WM_PAINT: {
             ctx.pRT->BeginDraw();
-            if (gd.gameState == GameState::HOME_MENU) PaintMenu(ctx, homeMenu, gd.homeMenu);
-            if (gd.gameState == GameState::GAME_OVER) PaintMenu(ctx, gameOverMenu, gd.gameOverMenu);
-            if (gd.gameState == GameState::PAUSED) PaintMenu(ctx, pauseMenu, gd.pauseMenu);
-            if (gd.gameState == GameState::PLAYING) PaintGame(ctx, snake, gd);
+            if (gd.gS->screen == MenuNames::HOME) PaintMenu(ctx, homeMenu, gd.gS->h_menu);
+            if (gd.gS->screen == MenuNames::GAME_OVER) PaintMenu(ctx, gameOverMenu, gd.gS->go_menu);
+            if (gd.gS->screen == MenuNames::PAUSE) PaintMenu(ctx, pauseMenu, gd.gS->p_menu);
+            if (gd.gS->screen == MenuNames::PLAYING) PaintGame(ctx, snake, gd);
             ctx.fullRedraw = FALSE;
             ctx.pRT->EndDraw();
             ValidateRect(hwnd, NULL);
             return 0;
         }
         case WM_TIMER:
-            if (gd.gameState == GameState::PLAYING) {
+            if (gd.gS->screen == MenuNames::PLAYING) {
                 UpdateGame(hwnd);
                 InvalidateRect(hwnd, NULL, FALSE);
             }
             return 0;
         case WM_DESTROY:
             ctx.release();
+            delete gd.gS;
             PostQuitMessage(0);
             return 0;
     }

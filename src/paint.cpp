@@ -1,6 +1,6 @@
-#include "render.h"
-
 #include <cwchar>
+
+#include "snake.h"
 
 void InitRenderContext(RenderContext &ctx, HWND hwnd) {
     auto makeFont = [&](IDWriteTextFormat *&fmt, const wchar_t *fam, DWRITE_FONT_WEIGHT wght, float sz) {
@@ -34,7 +34,7 @@ void PaintGame(RenderContext &ctx, const Snake &snake, const GameData &gd) {
     wchar_t scoreBuf[64];
     wchar_t levelBuf[64];
     swprintf_s(scoreBuf, L"Ate: %d (%d)", gd.eaten, gd.score);
-    swprintf_s(levelBuf, L"Level: +%d", gd.level);
+    swprintf_s(levelBuf, L"Level: %d", gd.level);
 
     auto fillSnake = [&] {
         for (int i {}; i < snake.len; ++i) {
