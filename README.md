@@ -4,7 +4,7 @@ Just a fun Snake project that I used as an excuse to learn about interfacing wit
 
 ## Building
 
-The build uses (MSYS2/UCRT64) gcc 15.2.0 and GNU Make
+The build uses (MSYS2/UCRT64) gcc 15.2.0 and GNU Make (included in MSYS2 toolchain)
 
 The binary is output to `bin/snake_win32`.
 
