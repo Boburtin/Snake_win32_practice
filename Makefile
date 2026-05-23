@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++23 -Wall -Werror -Wextra -DUNICODE -D_UNICODE 
+CXXFLAGS = -std=c++23 -Wall -Werror -Wextra -DUNICODE -D_UNICODE -DWIN32_LEAN_AND_MEAN 
 LDFLAGS = -static -municode -mwindows  
 LDLIBS = -ld2d1 -ldwrite
 

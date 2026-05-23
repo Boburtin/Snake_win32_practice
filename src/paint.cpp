@@ -1,6 +1,10 @@
+#include <d2d1.h>
+#include <dwrite.h>
+#include <windows.h>
+
 #include <cwchar>
 
-#include "snake.h"
+#include "BoardLogic.h"
 
 void InitRenderContext(RenderContext &ctx, HWND hwnd) {
     auto makeFont = [&](IDWriteTextFormat *&fmt, const wchar_t *fam, DWRITE_FONT_WEIGHT wght, float sz) {

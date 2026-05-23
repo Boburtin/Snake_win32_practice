@@ -1,9 +1,10 @@
-#include "snake.h"
+#include <windows.h>
+
+#include "BoardLogic.h"
 
 static Snake snake {};
 static GameData gd {};
 static RenderContext ctx {};
-static Xorshift64 rng = Xorshift64();
 constexpr UINT_PTR TIMER_ID = 67ULL;
 constexpr UINT BASELINE_TICK_SPEED = 120U;
 
@@ -127,38 +128,6 @@ void HandleMenus(WPARAM key) {
     }
 }
 
-HWND WindowInit(HINSTANCE hInstance, int nCmdShow) {
-    WNDCLASS wc {};
-    wc.lpfnWndProc = WindowProc;
-    wc.lpszClassName = L"3meo snake";
-    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hInstance = hInstance;
-    RegisterClass(&wc);
-    RECT rc = { 0, 0, WIDTH, HEIGHT + 2 * TILESIZE };
-    DWORD WindowStyles = WS_OVERLAPPEDWINDOW & ~(WS_MAXIMIZEBOX | WS_THICKFRAME);
-    AdjustWindowRectEx(&rc, WindowStyles, FALSE, 0);
-    HWND hwnd = CreateWindowEx(0, L"3meo snake", L"Snake", WindowStyles, CW_USEDEFAULT, CW_USEDEFAULT,
-                               rc.right - rc.left, rc.bottom - rc.top, NULL, NULL, hInstance, NULL);
-    ShowWindow(hwnd, nCmdShow);
-    InitRenderContext(ctx, hwnd);
-    gd.resetMenus(MenuNames::HOME);
-    gd.lvlUp(START_INDEX);
-    UpdateWindow(hwnd);
-    SetTimer(hwnd, TIMER_ID, BASELINE_TICK_SPEED, NULL);
-    return hwnd;
-}
-
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
-    HWND hwnd = WindowInit(hInstance, nCmdShow);
-    if (hwnd == NULL) return 0;
-    MSG msg {};
-    while (GetMessage(&msg, NULL, 0, 0) > 0) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
-    return static_cast<int>(msg.wParam);
-}
-
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_KEYDOWN:
@@ -202,4 +171,36 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             return 0;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+
+static HWND WindowInit(HINSTANCE hInstance, int nCmdShow) {
+    WNDCLASS wc {};
+    wc.lpfnWndProc = WindowProc;
+    wc.lpszClassName = L"3meo snake";
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.hInstance = hInstance;
+    RegisterClass(&wc);
+    RECT rc = { 0, 0, WIDTH, HEIGHT + 2 * TILESIZE };
+    DWORD WindowStyles = WS_OVERLAPPEDWINDOW & ~(WS_MAXIMIZEBOX | WS_THICKFRAME);
+    AdjustWindowRectEx(&rc, WindowStyles, FALSE, 0);
+    HWND hwnd = CreateWindowEx(0, L"3meo snake", L"Snake", WindowStyles, CW_USEDEFAULT, CW_USEDEFAULT,
+                               rc.right - rc.left, rc.bottom - rc.top, NULL, NULL, hInstance, NULL);
+    ShowWindow(hwnd, nCmdShow);
+    InitRenderContext(ctx, hwnd);
+    gd.resetMenus(MenuNames::HOME);
+    gd.lvlUp(START_INDEX);
+    UpdateWindow(hwnd);
+    SetTimer(hwnd, TIMER_ID, BASELINE_TICK_SPEED, NULL);
+    return hwnd;
+}
+
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow) {
+    HWND hwnd = WindowInit(hInstance, nCmdShow);
+    if (hwnd == NULL) return 0;
+    MSG msg {};
+    while (GetMessage(&msg, NULL, 0, 0) > 0) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+    return static_cast<int>(msg.wParam);
 }
