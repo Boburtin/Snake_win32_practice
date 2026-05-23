@@ -1,6 +1,8 @@
 # Snake (Win32 C++)
 
-Just a fun Snake project that I used as an excuse to learn about interfacing with Windows. The project began using the old GDI API which involved dynamically creating render objects (like brushes or pens, set to a specific color), swapping them in/out of the current context structure, and managing their deletion at the end of scope. The project now uses Direct2D and the COM model which allows for render objects to exist for the lifetime of the program via an opaque RenderContext struct that holds a bunch of pointers, and setting/changing colors is much simpler now since the cleanup only requires calling Windows' Release() method before the final PostQuitMessage(0).
+Just a fun Snake project that I used as an excuse to learn about interfacing with Windows' Direct2D/COM models. Very basic.
+
+![Snake demo](docs/demo.webp)
 
 ## Building
 
