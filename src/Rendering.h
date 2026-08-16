@@ -4,7 +4,7 @@
 #include <d2d1.h>
 #include <dwrite.h>
 #include <windows.h>
-
+#include <cstdint>
 #include <cmath>
 #include <cwchar>
 
@@ -52,7 +52,7 @@ struct MenuRect {
     const D2D1_RECT_F header;
     const wchar_t *title;
     const MenuOption options[4];
-    const int count;
+    const uint32_t count;
 };
 
 inline const MenuRect gameOverMenu { { WPOINT2, HPOINT2, WPOINT8, HPOINT5 },
@@ -96,7 +96,17 @@ inline LevelTheme levelTheme(int level) {
     return { { s(.75f), .75f, 0.f, 1.f }, { 1.f, 1.f, 1.f, .75f }, { s(.1f), 1.f, s(0.f), 1.f } };
 }
 
-void drawMenuSection(RenderContext &ctx, int currentSelection, int thisIndex, const MenuRect &mr);
+template <typename T>
+inline void drawMenuSection(RenderContext &ctx, T currentSelection, uint8_t thisIndex, const MenuRect &mr) {
+    ctx.pBrush->SetColor(D2D1::ColorF(static_cast<uint8_t>(currentSelection) == thisIndex ? D2D1::ColorF::White : D2D1::ColorF::Black));
+    ctx.pRT->FillRectangle(mr.options[thisIndex].rect, ctx.pBrush);
+    ctx.pBrush->SetColor(D2D1::ColorF(mr.options[thisIndex].locked    ? D2D1::ColorF::Gray
+                                      : static_cast<uint8_t>(currentSelection) == thisIndex ? D2D1::ColorF::Black
+                                                                      : D2D1::ColorF::White));
+    ctx.pRT->DrawTextW(mr.options[thisIndex].label, static_cast<uint32_t>(wcslen(mr.options[thisIndex].label)),
+                       mr.options[thisIndex].locked ? ctx.pLockedOptionFont : ctx.pHudFont, mr.options[thisIndex].rect,
+                       ctx.pBrush);
+}
 
 template <typename T>
 inline void PaintMenu(RenderContext &ctx, const MenuRect &mr, T currentSelection) {
@@ -104,8 +114,8 @@ inline void PaintMenu(RenderContext &ctx, const MenuRect &mr, T currentSelection
     ctx.pRT->FillRectangle(mr.frame, ctx.pBrush);
     ctx.pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::White));
     ctx.pRT->DrawRectangle(mr.frame, ctx.pBrush);
-    ctx.pRT->DrawTextW(mr.title, wcslen(mr.title), ctx.pHeaderFont, mr.header, ctx.pBrush);
-    for (int i {}; i < mr.count; ++i) { drawMenuSection(ctx, (int)currentSelection, i, mr); }
+    ctx.pRT->DrawTextW(mr.title, static_cast<uint32_t>(wcslen(mr.title)), ctx.pHeaderFont, mr.header, ctx.pBrush);
+    for (uint8_t i {}; i < mr.count; ++i) { drawMenuSection(ctx, currentSelection, i, mr); }
 }
 
 #endif

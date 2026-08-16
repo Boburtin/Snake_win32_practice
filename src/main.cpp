@@ -41,11 +41,11 @@ void UpdateGame(HWND hwnd) {
     snake.head = (snake.head + 1) % TOTAL_TILES;
     snake.body[snake.head] = next;
     if (next != gd.food) {
-        int tail_index = snake.body[(snake.head - snake.len + TOTAL_TILES) % TOTAL_TILES].index();
+        auto tail_index = snake.body[(snake.head - snake.len + TOTAL_TILES) % TOTAL_TILES].index();
         gd.board[tail_index] = TileType::FREE;
         return;
     }
-    if (snake.len > gd.level * 10) {
+    if (snake.len > static_cast<uint32_t>(gd.level) * 10) {
         gd.level++;
         snake.lvlUp();
         gd.lvlUp(snake.body[0].index());
@@ -62,9 +62,9 @@ void UpdateGame(HWND hwnd) {
 
 template <typename T>
 void cycleMenu(T &option, int dir, T first, T last) {
-    int val = static_cast<int>(option) + dir;
-    int min = static_cast<int>(first);
-    int max = static_cast<int>(last);
+    auto val = static_cast<int>(option) + dir;
+    auto min = static_cast<int>(first);
+    auto max = static_cast<int>(last);
     if (val < min) val = max;
     if (val > max) val = min;
     option = static_cast<T>(val);
@@ -76,25 +76,25 @@ void HandleMenus(WPARAM key) {
         case VK_RIGHT:
         case 'S':
         case 'D':
-            if (gd.gS->screen == MenuNames::PAUSE) cycleMenu(gd.gS->p_menu, 1, PauseMenu::PLAY, PauseMenu::QUIT);
-            if (gd.gS->screen == MenuNames::GAME_OVER)
-                cycleMenu(gd.gS->go_menu, 1, GameOverMenu::REDO, GameOverMenu::QUIT);
-            if (gd.gS->screen == MenuNames::HOME) cycleMenu(gd.gS->h_menu, 1, HomeMenu::START, HomeMenu::LEAVE);
+            if (gd.gS.screen == MenuNames::PAUSE) cycleMenu(gd.gS.p_menu, 1, PauseMenu::PLAY, PauseMenu::QUIT);
+            if (gd.gS.screen == MenuNames::GAME_OVER)
+                cycleMenu(gd.gS.go_menu, 1, GameOverMenu::REDO, GameOverMenu::QUIT);
+            if (gd.gS.screen == MenuNames::HOME) cycleMenu(gd.gS.h_menu, 1, HomeMenu::START, HomeMenu::LEAVE);
             break;
         case VK_UP:
         case VK_LEFT:
         case 'W':
         case 'A':
-            if (gd.gS->screen == MenuNames::PAUSE) cycleMenu(gd.gS->p_menu, -1, PauseMenu::PLAY, PauseMenu::QUIT);
-            if (gd.gS->screen == MenuNames::GAME_OVER)
-                cycleMenu(gd.gS->go_menu, -1, GameOverMenu::REDO, GameOverMenu::QUIT);
-            if (gd.gS->screen == MenuNames::HOME) cycleMenu(gd.gS->h_menu, -1, HomeMenu::START, HomeMenu::LEAVE);
+            if (gd.gS.screen == MenuNames::PAUSE) cycleMenu(gd.gS.p_menu, -1, PauseMenu::PLAY, PauseMenu::QUIT);
+            if (gd.gS.screen == MenuNames::GAME_OVER)
+                cycleMenu(gd.gS.go_menu, -1, GameOverMenu::REDO, GameOverMenu::QUIT);
+            if (gd.gS.screen == MenuNames::HOME) cycleMenu(gd.gS.h_menu, -1, HomeMenu::START, HomeMenu::LEAVE);
             break;
         case VK_ESCAPE:
         case VK_RETURN:
         case VK_SPACE:
-            if (gd.gS->screen == MenuNames::PAUSE) {
-                switch (gd.gS->p_menu) {
+            if (gd.gS.screen == MenuNames::PAUSE) {
+                switch (gd.gS.p_menu) {
                     case PauseMenu::PLAY:
                         gd.resetMenus(MenuNames::PLAYING);
                         ctx.fullRedraw = TRUE;
@@ -103,20 +103,20 @@ void HandleMenus(WPARAM key) {
                         gd.reset(snake);
                         ctx.fullRedraw = TRUE;
                         break;
-                    case PauseMenu::QUIT: gd.gS->screen = MenuNames::HOME; break;
+                    case PauseMenu::QUIT: gd.gS.screen = MenuNames::HOME; break;
                 }
-            } else if (gd.gS->screen == MenuNames::GAME_OVER) {
-                switch (gd.gS->go_menu) {
+            } else if (gd.gS.screen == MenuNames::GAME_OVER) {
+                switch (gd.gS.go_menu) {
                     case GameOverMenu::REDO:
                         gd.reset(snake);
                         ctx.fullRedraw = TRUE;
                         break;
-                    case GameOverMenu::QUIT: gd.gS->screen = MenuNames::HOME; break;
+                    case GameOverMenu::QUIT: gd.gS.screen = MenuNames::HOME; break;
                 }
             }
 
-            else if (gd.gS->screen == MenuNames::HOME) {
-                switch (gd.gS->h_menu) {
+            else if (gd.gS.screen == MenuNames::HOME) {
+                switch (gd.gS.h_menu) {
                     case HomeMenu::START:
                         gd.reset(snake);
                         ctx.fullRedraw = TRUE;
@@ -132,7 +132,7 @@ void HandleMenus(WPARAM key) {
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_KEYDOWN:
-            switch (gd.gS->screen) {
+            switch (gd.gS.screen) {
                 case MenuNames::HOME:
                 case MenuNames::GAME_OVER:
                 case MenuNames::PAUSE:
@@ -150,24 +150,23 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             return 0;
         case WM_PAINT: {
             ctx.pRT->BeginDraw();
-            if (gd.gS->screen == MenuNames::HOME) PaintMenu(ctx, homeMenu, gd.gS->h_menu);
-            if (gd.gS->screen == MenuNames::GAME_OVER) PaintMenu(ctx, gameOverMenu, gd.gS->go_menu);
-            if (gd.gS->screen == MenuNames::PAUSE) PaintMenu(ctx, pauseMenu, gd.gS->p_menu);
-            if (gd.gS->screen == MenuNames::PLAYING) PaintGame(ctx, snake, gd);
+            if (gd.gS.screen == MenuNames::HOME) PaintMenu(ctx, homeMenu, gd.gS.h_menu);
+            if (gd.gS.screen == MenuNames::GAME_OVER) PaintMenu(ctx, gameOverMenu, gd.gS.go_menu);
+            if (gd.gS.screen == MenuNames::PAUSE) PaintMenu(ctx, pauseMenu, gd.gS.p_menu);
+            if (gd.gS.screen == MenuNames::PLAYING) PaintGame(ctx, snake, gd);
             ctx.fullRedraw = FALSE;
             ctx.pRT->EndDraw();
             ValidateRect(hwnd, NULL);
             return 0;
         }
         case WM_TIMER:
-            if (gd.gS->screen == MenuNames::PLAYING) {
+            if (gd.gS.screen == MenuNames::PLAYING) {
                 UpdateGame(hwnd);
                 InvalidateRect(hwnd, NULL, FALSE);
             }
             return 0;
         case WM_DESTROY:
             ctx.release();
-            delete gd.gS;
             PostQuitMessage(0);
             return 0;
     }

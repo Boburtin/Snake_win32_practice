@@ -1,5 +1,5 @@
-build/
-bin/
 .clang-format
-*.o
+obj/
+*.o[bj]
+bin/
 *.exe

@@ -4,44 +4,48 @@
 #include <intrin.h>
 #include <windows.h>
 
+#include <cstdint>
+
 #include "Rendering.h"
 
-inline constexpr int COLS = WIDTH / TILESIZE;
-inline constexpr int ROWS = HEIGHT / TILESIZE;
-inline constexpr int TOTAL_TILES = ROWS * COLS;
-inline constexpr int START_X = COLS / 2;
-inline constexpr int START_Y = ROWS / 2;
-inline constexpr int START_INDEX = START_Y * COLS + START_X;
+using std::uint64_t, std::int32_t, std::uint32_t, std::uint8_t;
 
-enum class MenuNames { PLAYING, HOME, GAME_OVER, PAUSE };
-enum class GameOverMenu { REDO, QUIT };
-enum class PauseMenu { PLAY, REDO, QUIT };
-enum class HomeMenu { START, MULTI, TOGGLE, LEAVE };
-enum class TileType { FREE, SNAKE };
+inline constexpr uint16_t COLS = WIDTH / TILESIZE;
+inline constexpr uint16_t ROWS = HEIGHT / TILESIZE;
+inline constexpr uint32_t TOTAL_TILES = ROWS * COLS;
+inline constexpr uint16_t START_X = COLS / 2;
+inline constexpr uint16_t START_Y = ROWS / 2;
+inline constexpr uint32_t START_INDEX = START_Y * COLS + START_X;
+
+enum class MenuNames : uint8_t { PLAYING, HOME, GAME_OVER, PAUSE };
+enum class GameOverMenu : uint8_t { REDO, QUIT };
+enum class PauseMenu : uint8_t { PLAY, REDO, QUIT };
+enum class HomeMenu : uint8_t { START, MULTI, TOGGLE, LEAVE };
+enum class TileType : uint8_t { FREE, SNAKE };
 
 struct Menus {
-    MenuNames screen = MenuNames::PLAYING;
-    GameOverMenu go_menu = GameOverMenu::REDO;
-    PauseMenu p_menu = PauseMenu::PLAY;
-    HomeMenu h_menu = HomeMenu::START;
+    MenuNames screen {};
+    GameOverMenu go_menu {};
+    PauseMenu p_menu {};
+    HomeMenu h_menu {};
 };
 
 struct PVec2 {
-    int x;
-    int y;
+    int32_t x;
+    int32_t y;
     PVec2 operator+(const PVec2 &other) const { return { x + other.x, y + other.y }; }
     bool operator==(const PVec2 &other) const { return x == other.x && y == other.y; }
-    int index() const { return y * COLS + x; }
+    uint32_t index() const { return y * static_cast<int32_t>(COLS) + x; }
 };
 
 struct Xorshift64 {
-    UINT64 state;
+    uint64_t state;
     Xorshift64() {
         LARGE_INTEGER qpc;
         QueryPerformanceCounter(&qpc);
-        state = __rdtsc() ^ (UINT64)qpc.QuadPart;
+        state = __rdtsc() ^ static_cast<uint64_t>(qpc.QuadPart);
     }
-    UINT64 next() {
+    uint64_t next() {
         state ^= state << 13;
         state ^= state >> 7;
         state ^= state << 17;
@@ -53,14 +57,14 @@ struct Snake {
     PVec2 dir = { 1, 0 };
     PVec2 pDir = { 1, 0 };
     PVec2 body[TOTAL_TILES] = { { START_X, START_Y } };
-    int head = 0;
-    int len = 1;
+    uint32_t head = 0;
+    uint32_t len = 1;
     PVec2 next() const {
-        PVec2 n = body[head] + dir;
-        if (n.x < 0) n.x = COLS - 1;
-        else if (n.x >= COLS) n.x = 0;
-        else if (n.y < 0) n.y = ROWS - 1;
-        else if (n.y >= ROWS) n.y = 0;
+        auto n = body[head] + dir;
+        if (n.x < 0) n.x = static_cast<int32_t>(COLS) - 1;
+        else if (n.x >= static_cast<int32_t>(COLS)) n.x = 0;
+        else if (n.y < 0) n.y = static_cast<int32_t>(ROWS) - 1;
+        else if (n.y >= static_cast<int32_t>(ROWS)) n.y = 0;
         return n;
     }
     void lvlUp() {
@@ -72,29 +76,29 @@ struct Snake {
 
 class GameData {
    public:
-    TileType board[TOTAL_TILES] { TileType::FREE };
-    Menus *gS = new Menus();
+    TileType board[TOTAL_TILES] {};
+    Menus gS {};
     PVec2 food;
     Xorshift64 seed = Xorshift64();
-    int level {};
-    int score {};
-    int eaten {};
+    uint32_t score {};
+    uint16_t level {};
+    uint16_t eaten {};
     void getNewFoodSpot() {
         PVec2 res;
         do {
-            UINT64 val = seed.next();
-            res.x = static_cast<int>(val % COLS);
-            res.y = static_cast<int>((val >> 32) % ROWS);
+            auto val { seed.next() };
+            res.x = static_cast<int32_t>(val % COLS);
+            res.y = static_cast<int32_t>((val >> 32) % ROWS);
         } while (board[res.index()] == TileType::SNAKE || res == food);
         food = res;
     }
     void resetMenus(MenuNames screen) {
-        gS->screen = screen;
-        gS->go_menu = GameOverMenu::REDO;
-        gS->p_menu = PauseMenu::PLAY;
-        gS->h_menu = HomeMenu::START;
+        gS.screen = screen;
+        gS.go_menu = GameOverMenu::REDO;
+        gS.p_menu = PauseMenu::PLAY;
+        gS.h_menu = HomeMenu::START;
     }
-    void lvlUp(int i) {
+    void lvlUp(uint32_t i) {
         wipeBoard();
         board[i] = TileType::SNAKE;
         getNewFoodSpot();

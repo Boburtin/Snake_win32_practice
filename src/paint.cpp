@@ -29,7 +29,7 @@ void InitRenderContext(RenderContext &ctx, HWND hwnd) {
 
 void PaintGame(RenderContext &ctx, const Snake &snake, const GameData &gd) {
     auto tileRect = [](const PVec2 &v) -> D2D1_RECT_F {
-        float x = v.x * TILESIZE, y = v.y * TILESIZE;
+        float x = v.x * static_cast<float>(TILESIZE), y = v.y * static_cast<float>(TILESIZE);
         return { x + 1.f, y + 1.f, x + TILESIZE - 1.f, y + TILESIZE - 1.f };
     };
 
@@ -41,7 +41,7 @@ void PaintGame(RenderContext &ctx, const Snake &snake, const GameData &gd) {
     swprintf_s(levelBuf, L"Level: %d", gd.level);
 
     auto fillSnake = [&] {
-        for (int i {}; i < snake.len; ++i) {
+        for (uint32_t i {}; i < snake.len; ++i) {
             D2D1_RECT_F snakeRect = tileRect(snake.body[(snake.head + TOTAL_TILES - i) % TOTAL_TILES]);
             ctx.pBrush->SetColor(i == 0 ? levelTheme(gd.level).head : levelTheme(gd.level).body);
             ctx.pRT->FillRectangle(snakeRect, ctx.pBrush);
@@ -53,8 +53,8 @@ void PaintGame(RenderContext &ctx, const Snake &snake, const GameData &gd) {
     };
     auto fillHud = [&] {
         ctx.pBrush->SetColor(D2D1::ColorF(1.f, 1.f, 1.f, 1.f));
-        ctx.pRT->DrawTextW(scoreBuf, wcslen(scoreBuf), ctx.pHudFont, h.level, ctx.pBrush);
-        ctx.pRT->DrawTextW(levelBuf, wcslen(levelBuf), ctx.pHudFont, h.score, ctx.pBrush);
+        ctx.pRT->DrawTextW(scoreBuf, static_cast<UINT32>(wcslen(scoreBuf)), ctx.pHudFont, h.level, ctx.pBrush);
+        ctx.pRT->DrawTextW(levelBuf, static_cast<UINT32>(wcslen(levelBuf)), ctx.pHudFont, h.score, ctx.pBrush);
         ctx.pRT->DrawRectangle(h.frame, ctx.pBrush);
     };
 
@@ -87,13 +87,3 @@ void PaintGame(RenderContext &ctx, const Snake &snake, const GameData &gd) {
     }
 };
 
-void drawMenuSection(RenderContext &ctx, int currentSelection, int thisIndex, const MenuRect &mr) {
-    ctx.pBrush->SetColor(D2D1::ColorF(currentSelection == thisIndex ? D2D1::ColorF::White : D2D1::ColorF::Black));
-    ctx.pRT->FillRectangle(mr.options[thisIndex].rect, ctx.pBrush);
-    ctx.pBrush->SetColor(D2D1::ColorF(mr.options[thisIndex].locked    ? D2D1::ColorF::Gray
-                                      : currentSelection == thisIndex ? D2D1::ColorF::Black
-                                                                      : D2D1::ColorF::White));
-    ctx.pRT->DrawTextW(mr.options[thisIndex].label, wcslen(mr.options[thisIndex].label),
-                       mr.options[thisIndex].locked ? ctx.pLockedOptionFont : ctx.pHudFont, mr.options[thisIndex].rect,
-                       ctx.pBrush);
-}
