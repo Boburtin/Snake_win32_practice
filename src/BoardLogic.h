@@ -4,8 +4,14 @@
 #include <intrin.h>
 #include <windows.h>
 
-#include "Constants.h"
 #include "Rendering.h"
+
+inline constexpr int COLS = WIDTH / TILESIZE;
+inline constexpr int ROWS = HEIGHT / TILESIZE;
+inline constexpr int TOTAL_TILES = ROWS * COLS;
+inline constexpr int START_X = COLS / 2;
+inline constexpr int START_Y = ROWS / 2;
+inline constexpr int START_INDEX = START_Y * COLS + START_X;
 
 enum class MenuNames { PLAYING, HOME, GAME_OVER, PAUSE };
 enum class GameOverMenu { REDO, QUIT };

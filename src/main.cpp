@@ -5,6 +5,7 @@
 static Snake snake {};
 static GameData gd {};
 static RenderContext ctx {};
+
 constexpr UINT_PTR TIMER_ID = 67ULL;
 constexpr UINT BASELINE_TICK_SPEED = 120U;
 

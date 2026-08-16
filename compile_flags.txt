@@ -1,0 +1,8 @@
+-xc++
+-std=c++23
+-Wall
+-Werror
+-Wextra
+-DUNICODE
+-D_UNICODE
+-DWIN32_LEAN_AND_MEAN

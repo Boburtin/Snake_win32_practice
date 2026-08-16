@@ -20,6 +20,9 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+compile_flags.txt:
+	@echo $(CXXFLAGS) | tr ' ' '\n' > $@
+
 run: $(TARGET)
 	@./$(TARGET)
 
